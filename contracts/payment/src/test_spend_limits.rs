@@ -198,7 +198,7 @@ fn test_spend_limit_restored_on_refund() {
     assert_eq!(client.get_spend_limit(&customer).unwrap().used, 250);
 
     // Refunding the payment restores the consumed allowance
-    client.refund_payment(&merchant, &payment_id);
+    client.refund_payment(&admin, &payment_id);
     assert_eq!(client.get_spend_limit(&customer).unwrap().used, 0);
 }
 
@@ -231,7 +231,7 @@ fn test_spend_limit_restore_bounded_at_zero() {
     client.cancel_payment(&merchant, &payment_id);
     assert_eq!(client.get_spend_limit(&customer).unwrap().used, 0);
 
-    // A second restore attempt must not push usage below zero
-    client.cancel_payment(&merchant, &payment_id);
+    // A second cancel is rejected and must not push usage below zero
+    assert!(client.try_cancel_payment(&merchant, &payment_id).is_err());
     assert_eq!(client.get_spend_limit(&customer).unwrap().used, 0);
 }

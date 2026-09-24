@@ -135,7 +135,7 @@ fn test_lifecycle_timestamps_on_reject() {
 #[test]
 fn test_lifecycle_timestamps_on_process() {
     let (env, client, admin, merchant, customer) = setup_test_env();
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
 
     let refund_id = client.request_refund(
         &merchant,
@@ -379,7 +379,7 @@ fn test_get_customer_refund_summary_empty() {
 #[test]
 fn test_get_customer_refund_summary_with_data() {
     let (env, client, admin, merchant, customer) = setup_test_env();
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
 
     // Create refund 1 - will be processed
     env.ledger().set_timestamp(100);

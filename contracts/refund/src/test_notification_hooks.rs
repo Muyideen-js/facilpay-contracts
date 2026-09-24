@@ -310,7 +310,7 @@ fn test_hook_invocation_on_refund_processed() {
     // Create, approve, and process a refund
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
 
     let refund_id = client.request_refund(
         &merchant,

@@ -38,6 +38,7 @@ fn create_refund_and_issue_voucher(
         &RefundReasonCode::ProductDefect,
         &env.ledger().timestamp(),
     );
+    client.approve_refund(admin, &refund_id);
 
     let voucher_id = client.issue_refund_voucher(admin, &refund_id, &expiry_seconds);
     (refund_id, voucher_id)

@@ -91,7 +91,7 @@ fn test_evaluate_auto_refund_triggers_on_timeout() {
     let (client, admin) = setup(&env);
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let payment_contract =
         install_mock_payment_contract(&env, sample_payment(&env, &merchant, &customer, &token));
     client.set_payment_contract_address(&admin, &payment_contract);
@@ -150,7 +150,7 @@ fn test_evaluate_auto_refund_triggers_on_contract_state_match() {
     let (client, admin) = setup(&env);
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let payment_contract =
         install_mock_payment_contract(&env, sample_payment(&env, &merchant, &customer, &token));
     client.set_payment_contract_address(&admin, &payment_contract);
@@ -186,7 +186,7 @@ fn test_evaluate_auto_refund_cannot_retrigger_after_success() {
     let (client, admin) = setup(&env);
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let payment_contract =
         install_mock_payment_contract(&env, sample_payment(&env, &merchant, &customer, &token));
     client.set_payment_contract_address(&admin, &payment_contract);

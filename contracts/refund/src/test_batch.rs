@@ -19,7 +19,7 @@ fn make_refund(
     payment_id: u64,
 ) -> u64 {
     let customer = Address::generate(env);
-    let token = Address::generate(env);
+    let token = crate::test_funded_token(env, &client.address);
     client.request_refund(
         merchant,
         &payment_id,

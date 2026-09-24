@@ -897,7 +897,7 @@ fn test_multiple_partial_refunds_for_same_payment() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let admin = Address::generate(&env);
     let payment_id = 7u64;
     let original_payment_amount = 1500i128;
@@ -1016,7 +1016,7 @@ fn test_status_queries_and_counts() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let admin = Address::generate(&env);
     let payment_id = 10u64;
     let amount = 500i128;
@@ -1377,7 +1377,7 @@ fn test_reason_code_analytics_cache_invalidated_on_process_within_window() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let reason = String::from_str(&env, "cache-test");
 
     env.mock_all_auths();
@@ -1614,7 +1614,7 @@ fn test_can_refund_payment_helper() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let admin = Address::generate(&env);
     let payment_id = 77u64;
     let original_payment_amount = 1000i128;
@@ -1772,7 +1772,8 @@ fn test_arbitration_deadline_enforcement() {
     let case_id = client.escalate_to_arbitration(&customer, &refund_id, &token_address, &300i128);
 
     client.cast_arbitration_vote(&arb1, &case_id, &true, &BytesN::from_array(&env, &[0; 32]));
-    env.ledger().set_timestamp(8 * 86400);
+    // Past the default 14-day arbitration deadline
+    env.ledger().set_timestamp(15 * 86400);
 
     assert!(client
         .try_cast_arbitration_vote(&arb2, &case_id, &true, &BytesN::from_array(&env, &[0; 32]))
@@ -2076,7 +2077,7 @@ fn test_file_and_resolve_appeal_upheld_processes_refund() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
 
     let refund_id = client.request_refund(
         &merchant,

@@ -238,7 +238,7 @@ fn test_merchant_override_flag_persistence() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let payment_id = 300u64;
     let deadline = env.ledger().timestamp() + 5000;
 
@@ -358,7 +358,7 @@ fn test_multiple_triggers_selective_override() {
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token = crate::test_funded_token(&env, &client.address);
     let payment_id_1 = 600u64;
     let payment_id_2 = 601u64;
 

@@ -3704,6 +3704,7 @@ impl PaymentContract {
 
         // Update payment status to Cancelled
         payment.status = PaymentStatus::Cancelled;
+        PaymentContract::restore_spend_limit(&env, &payment);
 
         // Store updated payment back to storage
         env.storage()
@@ -4736,6 +4737,7 @@ impl PaymentContract {
         // still-Pending payment before it becomes Refunded. A payment with no
         // installment history transfers nothing.
         PaymentContract::return_collected_installments(env, &payment, payment_id);
+        PaymentContract::restore_spend_limit(env, &payment);
 
         env.storage()
             .instance()
@@ -4939,6 +4941,7 @@ impl PaymentContract {
         // still-Pending payment before it becomes Cancelled. A payment with no
         // installment history transfers nothing.
         PaymentContract::return_collected_installments(env, &payment, payment_id);
+        PaymentContract::restore_spend_limit(env, &payment);
 
         env.storage()
             .instance()
@@ -7935,28 +7938,13 @@ impl PaymentContract {
         }
 
         let record = PaymentContract::get_or_default_merchant_fee_record(env, merchant.clone());
-        let risk_config: RiskFeeConfig = env
-            .storage()
-            .instance()
-            .get(&DataKey::Config(ConfigKey::RiskFeeConfig))
-            .unwrap_or(RiskFeeConfig {
-                base_fee_bps: 100,
-                large_amount_threshold: 1000000,
-                large_amount_surcharge_bps: 50,
-                new_customer_surcharge_bps: 100,
-                high_risk_currency_surcharge: 200,
-            });
-        let risk_surcharge_bps = PaymentContract::calculate_risk_score(
-            env.clone(),
-            customer.clone(),
-            merchant.clone(),
-            amount,
-            currency,
-        );
-        let effective_bps = (config.fee_bps as u64 + risk_surcharge_bps as u64).min(1000u64) as u32;
+        // Risk-based surcharge (opt-in: only applied when a RiskFeeConfig has
+        // been configured). Previewed by `calculate_fee`.
+        let risk_surcharge_bps =
+            PaymentContract::risk_surcharge_bps(env, customer, amount, &currency);
         let fee = PaymentContract::compute_fee_amount(
             amount,
-            effective_bps,
+            config.fee_bps,
             &record.fee_tier,
             config.min_fee,
             config.max_fee,
@@ -7986,11 +7974,14 @@ impl PaymentContract {
         );
 
         if risk_surcharge_bps > 0 {
+            let base_fee_bps = config.fee_bps
+                - (config.fee_bps * PaymentContract::get_tier_discount_bps(&record.fee_tier))
+                    / 10000;
             (RiskFeeApplied {
                 payment_id,
-                base_fee_bps: config.fee_bps,
+                base_fee_bps,
                 risk_surcharge_bps,
-                total_fee_bps: effective_bps,
+                total_fee_bps: base_fee_bps + risk_surcharge_bps,
             })
             .publish(env);
         }
@@ -12186,6 +12177,22 @@ impl PaymentContract {
             &limit,
         );
         Ok(())
+    }
+
+    /// Returns spend-limit allowance consumed by a payment that never settled
+    /// (cancelled, expired or refunded while Pending). Only usage from the
+    /// current period is restored, and `used` never drops below zero.
+    fn restore_spend_limit(env: &Env, payment: &Payment) {
+        let key = DataKey::Feature(FeatureKey::CustomerSpendLimit(payment.customer.clone()));
+        let mut limit: CustomerSpendLimit = match env.storage().instance().get(&key) {
+            Some(l) => l,
+            None => return,
+        };
+        if payment.created_at < limit.period_start {
+            return;
+        }
+        limit.used = limit.used.saturating_sub(payment.amount).max(0);
+        env.storage().instance().set(&key, &limit);
     }
 
     // ── SUBSCRIPTION GROUPS (#218) ────────────────────────────────────────────

@@ -8992,6 +8992,20 @@ impl RefundContract {
     }
 }
 
+/// Test helper: registers a real token and funds `holder` with it, so that
+/// flows which pay out (e.g. `process_refund`) can complete their transfers.
+#[cfg(test)]
+pub(crate) fn test_funded_token(env: &Env, holder: &Address) -> Address {
+    use soroban_sdk::testutils::Address as _;
+    let token = env
+        .register_stellar_asset_contract_v2(Address::generate(env))
+        .address();
+    token::StellarAssetClient::new(env, &token)
+        .mock_all_auths()
+        .mint(holder, &1_000_000_000);
+    token
+}
+
 mod test;
 mod test_policy;
 mod test_process;
